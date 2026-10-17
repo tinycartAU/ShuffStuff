@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ShuffStuff</title>
+  
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Theme Color for Android Status Bar -->
+  <meta name="theme-color" content="#000000">
+  
+  <!-- App Icon -->
+  <link rel="icon" type="image/png" href="ShuffStuff.png">
+  <link rel="apple-touch-icon" href="ShuffStuff.png">
+  
+  <style>
+    :root {
+      --bg-color: #000000;
+      --text-color: #ffff00;
+      --box-bg: #1a1a00;
+      --box-border: #444400;
+      --revealed-bg: #333300;
+      --locked-bg: #0d0d00;
+      --locked-border: #222200;
+      --danger-color: #ff4444;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .title-logo {
+      display: block;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 280px;
+      height: auto;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    select, button {
+      font-family: inherit;
+    }
+
+    .list-select {
+      background-color: var(--box-bg);
+      color: var(--text-color);
+      border: 2px solid var(--box-border);
+      border-radius: 6px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      flex-grow: 1;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .btn-icon {
+      background-color: var(--box-bg);
+      color: var(--text-color);
+      border: 2px solid var(--box-border);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .btn-icon:hover {
+      background-color: var(--box-border);
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      font-weight: normal;
+      margin-top: 0.2rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.9;
+    }
+
+    .routine-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .item-box {
+      background-color: var(--box-bg);
+      border: 2px solid var(--box-border);
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+    }
+
+    .item-box.hidden .item-text {
+      visibility: hidden;
+    }
+
+    .item-box.locked {
+      background-color: var(--locked-bg);
+      border-color: var(--locked-border);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .item-box.revealed {
+      background-color: var(--revealed-bg);
+      justify-content: space-between;
+    }
+
+    .item-box.revealed .item-text {
+      visibility: visible;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .checkbox-container {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .item-box.revealed .checkbox-container {
+      display: flex;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-color);
+      border-radius: 4px;
+      background-color: transparent;
+      cursor: pointer;
+      position: relative;
+      outline: none;
+    }
+
+    .checkbox-container input[type="checkbox"]:checked {
+      background-color: var(--text-color);
+    }
+
+    .checkbox-container input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      color: var(--bg-color);
+      font-weight: bold;
+      font-size: 14px;
+      top: -2px;
+      left: 3px;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .btn-reshuffle {
+      background-color: var(--text-color);
+      color: var(--bg-color);
+      border: none;
+      border-radius: 25px;
+      padding: 0.9rem 2rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s ease, filter 0.2s ease;
+      box-shadow: 0 4px 12px rgba(255, 255, 0, 0.2);
+    }
+
+    .btn-reshuffle:hover {
+      filter: brightness(0.9);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-color);
+      border: 2px solid var(--box-border);
+      border-radius: 25px;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-color);
+    }
+
+    .btn-delete {
+      color: var(--danger-color);
+      border-color: #551111;
+    }
+    .btn-delete:hover {
+      border-color: var(--danger-color);
+      background-color: #220000;
+    }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      box-sizing: border-box;
+      z-index: 100;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--box-bg);
+      border: 2px solid var(--box-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 380px;
+      text-align: left;
+      box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      color: var(--text-color);
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 0.3rem;
+      opacity: 0.9;
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+      background: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid var(--box-border);
+      border-radius: 6px;
+      padding: 0.5rem;
+      box-sizing: border-box;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 0.6rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      background: var(--text-color);
+      color: var(--bg-color);
+      border: none;
+    }
+
+    .btn-cancel {
+      background: transparent;
+      color: var(--text-color);
+      border: 1px solid var(--box-border);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <img src="ShuffStuff_Logo.png" alt="ShuffStuff" class="title-logo">
+    
+    <div class="toolbar">
+      <select id="listSelect" class="list-select"></select>
+      <button id="editListBtn" class="btn-icon" title="Edit Current List">✎</button>
+      <button id="newListBtn" class="btn-icon" title="Create New List">+</button>
+    </div>
+
+    <div id="listSubtitle" class="subtitle">Routine</div>
+
+    <div id="routineList" class="routine-list"></div>
+
+    <div class="action-buttons">
+      <button id="reshuffleBtn" class="btn-reshuffle">Reshuffle</button>
+      <button id="deleteListBtn" class="btn-secondary btn-delete">Delete List</button>
+    </div>
+  </div>
+
+  <!-- Create / Edit List Modal -->
+  <div id="createModal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Create New List</h3>
+      <div class="form-group">
+        <label for="newListName">List Name:</label>
+        <input type="text" id="newListName" placeholder="e.g., Weekend Chores">
+      </div>
+      <div class="form-group">
+        <label for="newListItems">Items (one per line):</label>
+        <textarea id="newListItems" rows="4" placeholder="Vacuum&#10;Mop Floors&#10;Clean Kitchen"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="newListPrecedence">Must Occur Before (Optional, format: Item A, Item B per line):</label>
+        <textarea id="newListPrecedence" rows="2" placeholder="Arm Day, Leg Day"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="newListExclusions">Cannot Be Consecutive (Optional, format: Item X, Item Y per line):</label>
+        <textarea id="newListExclusions" rows="2" placeholder="Back Day, Core Day"></textarea>
+      </div>
+      <div class="modal-buttons">
+        <button id="cancelCreateBtn" class="btn-cancel">Cancel</button>
+        <button id="saveNewListBtn" class="btn-save">Save List</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+      <h3>Delete List</h3>
+      <p id="deleteMessage" style="font-size: 0.9rem; margin: 1rem 0; opacity: 0.9;">Are you sure you want to delete this list?</p>
+      <div class="modal-buttons">
+        <button id="cancelDeleteBtn" class="btn-cancel">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn-save" style="background: var(--danger-color); color: #ffffff;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_ALL_LISTS = 'shuffstuff_all_lists';
+    const STORAGE_ACTIVE_ID = 'shuffstuff_active_id';
+
+    const defaultLists = [
+      {
+        id: 'exercise-routine',
+        name: 'Exercise Routine',
+        items: ["Arm Day", "Cardio Killer", "Core Day", "Leg Day", "Back Day", "Fat Burn", "Total Body"],
+        precedenceRules: [],
+        exclusionPairs: [["Back Day", "Core Day"]]
+      }
+    ];
+
+    let allLists = loadAllLists();
+    let activeListId = localStorage.getItem(STORAGE_ACTIVE_ID) || allLists[0].id;
+    let currentState = [];
+    let editingListId = null;
+
+    function loadAllLists() {
+      const saved = localStorage.getItem(STORAGE_ALL_LISTS);
+      if (!saved) {
+        localStorage.setItem(STORAGE_ALL_LISTS, JSON.stringify(defaultLists));
+        return defaultLists;
+      }
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return defaultLists;
+      }
+    }
+
+    function saveAllLists() {
+      localStorage.setItem(STORAGE_ALL_LISTS, JSON.stringify(allLists));
+    }
+
+    function getActiveListConfig() {
+      return allLists.find(l => l.id === activeListId) || allLists[0];
+    }
+
+    function getListStateKey(id) {
+      return `shuffstuff_state_${id}`;
+    }
+
+    function getLastItemKey(id) {
+      return `shuffstuff_last_item_${id}`;
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function isValidShuffle(arr, config) {
+      const lastItemKey = getLastItemKey(config.id);
+      const lastItemOfPrevious = localStorage.getItem(lastItemKey);
+      
+      if (lastItemOfPrevious && arr[0] === lastItemOfPrevious) {
+        return false;
+      }
+
+      if (config.precedenceRules) {
+        for (const [predecessor, successor] of config.precedenceRules) {
+          const indexA = arr.indexOf(predecessor);
+          const indexB = arr.indexOf(successor);
+          if (indexA !== -1 && indexB !== -1 && indexA > indexB) {
+            return false;
+          }
+        }
+      }
+
+      if (config.exclusionPairs) {
+        for (let i = 0; i < arr.length - 1; i++) {
+          const itemA = arr[i];
+          const itemB = arr[i + 1];
+          const violates = config.exclusionPairs.some(
+            ([x, y]) => (itemA === x && itemB === y) || (itemA === y && itemB === x)
+          );
+          if (violates) return false;
+        }
+      }
+
+      return true;
+    }
+
+    function generateValidList(config) {
+      let shuffled;
+      let attempts = 0;
+      do {
+        shuffled = shuffleArray(config.items);
+        attempts++;
+      } while (!isValidShuffle(shuffled, config) && attempts < 1000);
+
+      localStorage.setItem(getLastItemKey(config.id), shuffled[shuffled.length - 1]);
+
+      return shuffled.map(text => ({
+        text: text,
+        revealed: false,
+        completed: false
+      }));
+    }
+
+    function loadActiveListState() {
+      const config = getActiveListConfig();
+      const stateKey = getListStateKey(config.id);
+      const savedState = localStorage.getItem(stateKey);
+
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState);
+          const isValid = Array.isArray(parsed) && 
+            parsed.length === config.items.length &&
+            parsed.every(item => config.items.includes(item.text));
+          if (isValid) {
+            currentState = parsed;
+            return;
+          }
+        } catch (e) {}
+      }
+
+      currentState = generateValidList(config);
+      saveActiveListState();
+    }
+
+    function saveActiveListState() {
+      const config = getActiveListConfig();
+      localStorage.setItem(getListStateKey(config.id), JSON.stringify(currentState));
+    }
+
+    function renderDropdown() {
+      const select = document.getElementById('listSelect');
+      select.innerHTML = '';
+      allLists.forEach(list => {
+        const opt = document.createElement('option');
+        opt.value = list.id;
+        opt.textContent = list.name;
+        if (list.id === activeListId) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderList() {
+      const config = getActiveListConfig();
+      document.getElementById('listSubtitle').textContent = config.name;
+
+      const listContainer = document.getElementById('routineList');
+      listContainer.innerHTML = '';
+
+      currentState.forEach((item, index) => {
+        const isUnlocked = (index === 0) || currentState[index - 1].completed;
+
+        const box = document.createElement('div');
+        box.className = 'item-box';
+
+        if (!isUnlocked) {
+          box.classList.add('locked', 'hidden');
+        } else if (item.revealed) {
+          box.classList.add('revealed');
+        } else {
+          box.classList.add('hidden');
+        }
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'item-text';
+        textSpan.textContent = item.text;
+
+        const checkContainer = document.createElement('label');
+        checkContainer.className = 'checkbox-container';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = item.completed;
+        
+        checkbox.addEventListener('change', (e) => {
+          e.stopPropagation();
+          item.completed = checkbox.checked;
+          
+          if (!item.completed) {
+            for (let i = index + 1; i < currentState.length; i++) {
+              currentState[i].completed = false;
+              currentState[i].revealed = false;
+            }
+          }
+
+          saveActiveListState();
+          renderList();
+        });
+
+        checkContainer.appendChild(checkbox);
+        box.appendChild(textSpan);
+        box.appendChild(checkContainer);
+
+        box.addEventListener('click', () => {
+          if (isUnlocked && !item.revealed) {
+            item.revealed = true;
+            saveActiveListState();
+            renderList();
+          }
+        });
+
+        listContainer.appendChild(box);
+      });
+    }
+
+    function switchList(newId) {
+      activeListId = newId;
+      localStorage.setItem(STORAGE_ACTIVE_ID, activeListId);
+      loadActiveListState();
+      renderDropdown();
+      renderList();
+    }
+
+    function handleReshuffle() {
+      const config = getActiveListConfig();
+      localStorage.removeItem(getListStateKey(config.id));
+      currentState = generateValidList(config);
+      saveActiveListState();
+      renderList();
+    }
+
+    const modal = document.getElementById('createModal');
+    const modalTitle = document.getElementById('modalTitle');
+
+    document.getElementById('newListBtn').addEventListener('click', () => {
+      editingListId = null;
+      modalTitle.textContent = "Create New List";
+      document.getElementById('newListName').value = '';
+      document.getElementById('newListItems').value = '';
+      document.getElementById('newListPrecedence').value = '';
+      document.getElementById('newListExclusions').value = '';
+      modal.classList.add('active');
+    });
+
+    document.getElementById('editListBtn').addEventListener('click', () => {
+      const config = getActiveListConfig();
+      editingListId = config.id;
+      modalTitle.textContent = "Edit List";
+      document.getElementById('newListName').value = config.name;
+      document.getElementById('newListItems').value = config.items.join('\n');
+      document.getElementById('newListPrecedence').value = (config.precedenceRules || []).map(r => r.join(', ')).join('\n');
+      document.getElementById('newListExclusions').value = (config.exclusionPairs || []).map(p => p.join(', ')).join('\n');
+      modal.classList.add('active');
+    });
+
+    document.getElementById('cancelCreateBtn').addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+
+    document.getElementById('saveNewListBtn').addEventListener('click', () => {
+      const nameInput = document.getElementById('newListName').value.trim();
+      const itemsInput = document.getElementById('newListItems').value.trim();
+      const precedenceInput = document.getElementById('newListPrecedence').value.trim();
+      const exclusionsInput = document.getElementById('newListExclusions').value.trim();
+
+      if (!nameInput) {
+        alert("Please enter a list name.");
+        return;
+      }
+
+      let items = itemsInput.split('\n').map(i => i.trim()).filter(i => i.length > 0);
+
+      const precedenceRules = [];
+      if (precedenceInput) {
+        precedenceInput.split('\n').forEach(line => {
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length === 2 && parts[0] && parts[1]) {
+            precedenceRules.push([parts[0], parts[1]]);
+            if (!items.includes(parts[0])) items.push(parts[0]);
+            if (!items.includes(parts[1])) items.push(parts[1]);
+          }
+        });
+      }
+
+      const exclusionPairs = [];
+      if (exclusionsInput) {
+        exclusionsInput.split('\n').forEach(line => {
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length === 2 && parts[0] && parts[1]) {
+            exclusionPairs.push([parts[0], parts[1]]);
+            if (!items.includes(parts[0])) items.push(parts[0]);
+            if (!items.includes(parts[1])) items.push(parts[1]);
+          }
+        });
+      }
+
+      if (items.length < 2) {
+        alert("Please enter at least 2 items total.");
+        return;
+      }
+
+      if (editingListId) {
+        const listIndex = allLists.findIndex(l => l.id === editingListId);
+        if (listIndex !== -1) {
+          allLists[listIndex].name = nameInput;
+          allLists[listIndex].items = items;
+          allLists[listIndex].precedenceRules = precedenceRules;
+          allLists[listIndex].exclusionPairs = exclusionPairs;
+        }
+        saveAllLists();
+        modal.classList.remove('active');
+        loadActiveListState();
+        renderDropdown();
+        renderList();
+      } else {
+        const newId = 'list_' + Date.now();
+        const newList = {
+          id: newId,
+          name: nameInput,
+          items: items,
+          precedenceRules: precedenceRules,
+          exclusionPairs: exclusionPairs
+        };
+
+        allLists.push(newList);
+        saveAllLists();
+        modal.classList.remove('active');
+        switchList(newId);
+      }
+    });
+
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteBtn = document.getElementById('deleteListBtn');
+
+    deleteBtn.addEventListener('click', () => {
+      if (allLists.length <= 1) {
+        alert("You cannot delete your only remaining list.");
+        return;
+      }
+      const config = getActiveListConfig();
+      document.getElementById('deleteMessage').textContent = `Are you sure you want to delete "${config.name}"?`;
+      deleteModal.classList.add('active');
+    });
+
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+      deleteModal.classList.remove('active');
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+      const configToDelete = getActiveListConfig();
+      
+      localStorage.removeItem(getListStateKey(configToDelete.id));
+      localStorage.removeItem(getLastItemKey(configToDelete.id));
+
+      allLists = allLists.filter(l => l.id !== configToDelete.id);
+      saveAllLists();
+
+      deleteModal.classList.remove('active');
+      switchList(allLists[0].id);
+    });
+
+    document.getElementById('listSelect').addEventListener('change', (e) => {
+      switchList(e.target.value);
+    });
+
+    document.getElementById('reshuffleBtn').addEventListener('click', handleReshuffle);
+
+    renderDropdown();
+    loadActiveListState();
+    renderList();
+  </script>
+
+</body>
+</html>
